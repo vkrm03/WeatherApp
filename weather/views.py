@@ -3,6 +3,8 @@ from datetime import datetime
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from .models import Subscriber
+from .serializers import SubscriberSerializer
 
 API_KEY = 'acbe2caff4a35bddeb1262a9a05eb28b'
 LAT = '9.343255'
@@ -72,3 +74,28 @@ def get_daily_forecast(request):
         return Response(daily_forecast)
     else:
         return Response({"error": "Failed to fetch forecast"}, status=500)
+
+
+
+
+@api_view(['POST'])
+@permission_classes([])
+def subscribe_user(request):
+    name = request.data.get("name")
+    location = request.data.get("location")
+    chat_id = request.data.get("chat_id")
+
+    if not all([name, location, chat_id]):
+        return Response({"error": "Missing required fields"}, status=400)
+
+    try:
+        # Check if already exists
+        subscriber, created = Subscriber.objects.get_or_create(chat_id=chat_id)
+        subscriber.name = name
+        subscriber.location = location
+        subscriber.is_active = True
+        subscriber.save()
+
+        return Response({"message": "Subscribed successfully"}, status=201 if created else 200)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
