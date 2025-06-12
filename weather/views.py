@@ -2,12 +2,14 @@ import requests
 from datetime import datetime
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 API_KEY = 'acbe2caff4a35bddeb1262a9a05eb28b'
 LAT = '9.343255'
 LON = '77.428030'
 
 @api_view(['GET'])
+@permission_classes([])
 def get_current_weather(request):
     current_weather_url = f'https://api.openweathermap.org/data/2.5/weather?lat={LAT}&lon={LON}&appid={API_KEY}&units=metric'
     response = requests.get(current_weather_url)
@@ -25,6 +27,7 @@ def get_current_weather(request):
         return Response({"error": "Failed to fetch weather data"}, status=500)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_hourly_weather(request):
     url = f'https://api.openweathermap.org/data/2.5/forecast?lat={LAT}&lon={LON}&appid={API_KEY}&units=metric'
     response = requests.get(url)
@@ -47,6 +50,7 @@ def get_hourly_weather(request):
         return Response({"error": "Failed to fetch hourly forecast"}, status=500)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_daily_forecast(request):
     url = f'https://api.openweathermap.org/data/2.5/forecast?lat={LAT}&lon={LON}&appid={API_KEY}&units=metric'
     response = requests.get(url)
