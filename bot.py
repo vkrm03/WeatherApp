@@ -99,7 +99,7 @@ async def get_daily_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = requests.post(f"{API_BASE_URL}/subscribe/", json=payload, headers=headers)
         if res.status_code in [200, 201]:
             subscribed_users.add(chat_id)
-            await update.message.reply_text("You're subscribed! \nUse /hourly or /forecast anytime.")
+            await update.message.reply_text("You're subscribed! \nUse /hourly or /forecast anytime.\n Also You will get update automatically on your scheduled time.")
         else:
             await update.message.reply_text("Failed to subscribe. Try again later.")
     except Exception as e:
