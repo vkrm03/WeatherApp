@@ -10,22 +10,23 @@ from telegram.ext import (
     ConversationHandler,
 )
 
-# Logging setup
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# Bot Token & API Config
 TOKEN = '7014027715:AAF8vOqDusiTj_UVivhwIYH7zSjE3v5CUB0'
 API_TOKEN = '7959cc826b2fb87dbef5f111fc114ae6a2ce31ca'
 API_BASE_URL = 'http://127.0.0.1:8000/api'
 
-# Subscription states
-NAME, LOCATION = range(2)
+NAME, LOCATION, HOURLY_TIME, DAILY_TIME = range(4)
 subscribed_users = set()
 
-# /start command
+def generate_time_keyboard():
+    times = [f"{str(h).zfill(2)}:00" for h in range(0, 24)]
+    keyboard = [times[i:i+3] for i in range(0, len(times), 3)]
+    return keyboard
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     menu = [['/current_weather', '/subscribe']]
     await update.message.reply_text(
@@ -33,7 +34,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=ReplyKeyboardMarkup(menu, one_time_keyboard=True, resize_keyboard=True)
     )
 
-# /current_weather (Public)
 async def current_weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
     headers = {"Authorization": f"Token {API_TOKEN}"}
     try:
@@ -52,27 +52,43 @@ async def current_weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = f"Error: {str(e)}"
     await update.message.reply_text(msg)
 
-# /subscribe flow - Step 1
 async def subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("What's your name?")
     return NAME
 
-# /subscribe flow - Step 2
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['name'] = update.message.text
     await update.message.reply_text("Cool! Now drop your location name (city/town):")
     return LOCATION
 
-# /subscribe flow - Step 3
 async def get_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    name = context.user_data['name']
-    location = update.message.text
+    context.user_data['location'] = update.message.text
+    keyboard = generate_time_keyboard()
+    await update.message.reply_text(
+        "Select your preferred *Hourly Forecast* time:",
+        reply_markup=ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+    )
+    return HOURLY_TIME
+
+async def get_hourly_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['hourly_time'] = update.message.text
+    keyboard = generate_time_keyboard()
+    await update.message.reply_text(
+        "Nice! Now select your *Daily Forecast* time:",
+        reply_markup=ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+    )
+    return DAILY_TIME
+
+async def get_daily_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['daily_time'] = update.message.text
     chat_id = update.effective_chat.id
 
     payload = {
-        "name": name,
-        "location": location,
+        "name": context.user_data['name'],
+        "location": context.user_data['location'],
         "chat_id": chat_id,
+        "hourly_time": context.user_data['hourly_time'],
+        "daily_time": context.user_data['daily_time']
     }
     headers = {
         "Authorization": f"Token {API_TOKEN}",
@@ -83,19 +99,18 @@ async def get_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = requests.post(f"{API_BASE_URL}/subscribe/", json=payload, headers=headers)
         if res.status_code in [200, 201]:
             subscribed_users.add(chat_id)
-            await update.message.reply_text("You're subscribed! Use /hourly or /forecast now.")
+            await update.message.reply_text("You're subscribed! \nUse /hourly or /forecast anytime.")
         else:
             await update.message.reply_text("Failed to subscribe. Try again later.")
     except Exception as e:
         await update.message.reply_text(f"Error: {str(e)}")
     return ConversationHandler.END
 
-# Cancel subscription flow
+
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Subscription cancelled.")
     return ConversationHandler.END
 
-# Hourly forecast (private)
 async def hourly(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if chat_id not in subscribed_users:
@@ -112,7 +127,6 @@ async def hourly(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = f"Error: {str(e)}"
     await update.message.reply_text(msg)
 
-# Daily forecast (private)
 async def forecast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if chat_id not in subscribed_users:
@@ -129,35 +143,32 @@ async def forecast(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = f"Error: {str(e)}"
     await update.message.reply_text(msg)
 
-# Echo handler for unknown text
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Type /start to begin.")
 
-# Main function
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # Command handlers
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("current_weather", current_weather))
     app.add_handler(CommandHandler("hourly", hourly))
     app.add_handler(CommandHandler("forecast", forecast))
 
-    # Conversation handler for /subscribe
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("subscribe", subscribe)],
         states={
             NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
             LOCATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_location)],
+            HOURLY_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_hourly_time)],
+            DAILY_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_daily_time)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
     app.add_handler(conv_handler)
 
-    # Default text response
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
-    print("✅ Bot is running...")
+    print("Bot is running...")
     app.run_polling()
 
 if __name__ == '__main__':

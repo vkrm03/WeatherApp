@@ -38,7 +38,7 @@ def get_hourly_weather(request):
     if data.get("cod") == "200":
         hourly_forecast = []
 
-        for i in range(6):  # Every 3 hours, so 6 * 3 = next 18 hours
+        for i in range(6):
             forecast = data['list'][i]
             hourly_forecast.append({
                 "time": forecast['dt_txt'],
@@ -62,7 +62,7 @@ def get_daily_forecast(request):
         forecast_list = data['list']
         daily_forecast = []
 
-        for i in range(0, len(forecast_list), 8):  # Every 8 * 3hr = ~24hr
+        for i in range(0, len(forecast_list), 8):
             forecast = forecast_list[i]
             daily_forecast.append({
                 "date": forecast['dt_txt'].split()[0],
@@ -81,18 +81,22 @@ def get_daily_forecast(request):
 @api_view(['POST'])
 @permission_classes([])
 def subscribe_user(request):
+    print(request.data)
     name = request.data.get("name")
     location = request.data.get("location")
     chat_id = request.data.get("chat_id")
+    hourly_time = request.data.get("hourly_time")  # new
+    daily_time = request.data.get("daily_time")    # new
 
     if not all([name, location, chat_id]):
         return Response({"error": "Missing required fields"}, status=400)
 
     try:
-        # Check if already exists
         subscriber, created = Subscriber.objects.get_or_create(chat_id=chat_id)
         subscriber.name = name
         subscriber.location = location
+        subscriber.hourly_time = hourly_time
+        subscriber.daily_time = daily_time
         subscriber.is_active = True
         subscriber.save()
 

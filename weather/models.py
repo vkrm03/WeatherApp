@@ -4,6 +4,8 @@ class Subscriber(models.Model):
     name = models.CharField(max_length=100)
     location = models.CharField(max_length=100)
     chat_id = models.CharField(max_length=50, unique=True)
+    hourly_time = models.TimeField(null=True, blank=True)
+    daily_time = models.TimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     subscribed_at = models.DateTimeField(auto_now_add=True)
 
