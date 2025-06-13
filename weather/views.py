@@ -85,8 +85,8 @@ def subscribe_user(request):
     name = request.data.get("name")
     location = request.data.get("location")
     chat_id = request.data.get("chat_id")
-    hourly_time = request.data.get("hourly_time")  # new
-    daily_time = request.data.get("daily_time")    # new
+    hourly_time = request.data.get("hourly_time")
+    daily_time = request.data.get("daily_time")
 
     if not all([name, location, chat_id]):
         return Response({"error": "Missing required fields"}, status=400)

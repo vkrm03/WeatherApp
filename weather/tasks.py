@@ -25,7 +25,6 @@ def send_scheduled_weather():
     for user in users:
         print(f"Processing user: {user.name} | Chat ID: {user.chat_id}")
 
-        # HOURLY WEATHER
         if user.hourly_time:
             print(f"User hourly time: {user.hourly_time.hour} | Current hour: {now.hour}")
             if now.hour == user.hourly_time.hour:
@@ -51,7 +50,6 @@ def send_scheduled_weather():
             else:
                 print("Current hour doesn't match hourly time.")
 
-        # DAILY WEATHER
         if user.daily_time:
             print(f"User daily time: {user.daily_time.hour} | Current hour: {now.hour}")
             if now.hour == user.daily_time.hour:
