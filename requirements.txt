@@ -1,0 +1,9 @@
+Django>=4.2
+djangorestframework>=3.14
+djoser>=2.2
+python-telegram-bot==20.7
+celery>=5.3
+django-celery-beat>=2.5
+redis>=5.0
+requests>=2.31
+python-decouple>=3.8
