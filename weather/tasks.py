@@ -5,7 +5,7 @@ from datetime import datetime
 
 TELEGRAM_TOKEN = '7014027715:API'
 API_TOKEN = 'API'
-API_BASE_URL = 'http://127.0.0.1:8000/api'
+API_BASE_URL = 'http://127.0.0.1:8000/'
 
 
 def send_message(chat_id, text):
