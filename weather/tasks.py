@@ -3,8 +3,8 @@ from .models import Subscriber
 import requests
 from datetime import datetime
 
-TELEGRAM_TOKEN = '7014027715:AAF8vOqDusiTj_UVivhwIYH7zSjE3v5CUB0'
-API_TOKEN = '7959cc826b2fb87dbef5f111fc114ae6a2ce31ca'
+TELEGRAM_TOKEN = '7014027715:API'
+API_TOKEN = 'API'
 API_BASE_URL = 'http://127.0.0.1:8000/api'
 
 
